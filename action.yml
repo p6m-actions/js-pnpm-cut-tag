@@ -1,0 +1,57 @@
+name: "JavaScript PNPM Cut Tag"
+description: "GitHub Action for cutting versioned tags for JavaScript projects using pnpm"
+author: "Jimmie Fulton <jimmie@ybor.ai>"
+
+# Define the inputs for this action
+inputs:
+  version-level:
+    description: "Version level to bump (patch, minor, or major)"
+    required: true
+    default: "patch"
+
+# Define the outputs for this action
+outputs:
+  version:
+    description: "The new version number"
+    value: ${{ steps.version.outputs.version }}
+  tag:
+    description: "The new tag that was created"
+    value: ${{ steps.version.outputs.tag }}
+
+# Define the runs configuration
+runs:
+  using: "composite"
+  steps:
+    - name: Bump Version and Create Tag
+      id: version
+      shell: bash
+      run: |
+        # Set git user identity for the commit
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+
+        # Bump version using pnpm
+        echo "Bumping version with level: ${{ inputs.version-level }}"
+        pnpm version ${{ inputs.version-level }} --no-git-tag-version
+
+        # Get the new version
+        NEW_VERSION=$(node -p "require('./package.json').version")
+        echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+        # Create tag with v prefix
+        TAG="v$NEW_VERSION"
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+        # Commit the version bump
+        git add package.json
+        git commit -m "Bump version to $NEW_VERSION"
+
+        # Create and push the tag
+        git tag $TAG
+        git push origin $TAG
+        git push
+
+# Define the branding for the action in the GitHub Marketplace
+branding:
+  icon: "tag"
+  color: "blue"
