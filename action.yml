@@ -8,6 +8,10 @@ inputs:
     description: "Version level to bump (patch, minor, or major)"
     required: true
     default: "patch"
+  project-path:
+    description: "Relative path to the project directory containing package.json (must not contain '..' or be absolute)"
+    required: false
+    default: "."
 
 # Define the outputs for this action
 outputs:
@@ -25,6 +29,7 @@ runs:
     - name: Bump Version and Create Tag
       id: version
       shell: bash
+      working-directory: ${{ inputs.project-path }}
       run: |
         # Set git user identity for the commit
         git config --local user.email "action@github.com"
