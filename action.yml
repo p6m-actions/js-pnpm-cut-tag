@@ -58,7 +58,7 @@ runs:
         echo "tag=$TAG" >> $GITHUB_OUTPUT
 
     - name: Commit and Tag Release
-      uses: p6m-actions/p6m-release-action@v1
+      uses: p6m-actions/p6m-release-action@v2
       with:
         tags: ${{ steps.version.outputs.tag }}
         commit_message: "Bump version to ${{ steps.version.outputs.version }}"
