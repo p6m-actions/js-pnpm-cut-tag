@@ -26,15 +26,25 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Bump Version and Create Tag
+    - name: Check id-token permission
+      shell: bash
+      run: |
+        if [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+          echo "::error title=Missing id-token: write permission::js-pnpm-cut-tag requires 'id-token: write' so p6m-release-action can mint a GitHub App token via OIDC. Add the following to your workflow's permissions block:"
+          echo ""
+          echo "  permissions:"
+          echo "    contents: write"
+          echo "    id-token: write"
+          echo ""
+          echo "See: https://github.com/p6m-actions/js-pnpm-cut-tag#required-permissions"
+          exit 1
+        fi
+
+    - name: Bump Version and Compute Tag
       id: version
       shell: bash
       working-directory: ${{ inputs.project-path }}
       run: |
-        # Set git user identity for the commit
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-
         # Bump version using pnpm
         echo "Bumping version with level: ${{ inputs.version-level }}"
         pnpm version ${{ inputs.version-level }} --no-git-tag-version
@@ -47,14 +57,11 @@ runs:
         TAG="v$NEW_VERSION"
         echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-        # Commit the version bump
-        git add package.json
-        git commit -m "Bump version to $NEW_VERSION"
-
-        # Create and push the tag
-        git tag $TAG
-        git push origin $TAG
-        git push
+    - name: Commit and Tag Release
+      uses: p6m-actions/p6m-release-action@v1
+      with:
+        tags: ${{ steps.version.outputs.tag }}
+        commit_message: "Bump version to ${{ steps.version.outputs.version }}"
 
 # Define the branding for the action in the GitHub Marketplace
 branding:

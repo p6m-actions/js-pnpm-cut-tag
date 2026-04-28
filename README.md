@@ -8,17 +8,17 @@ A GitHub Action for cutting versioned tags for JavaScript projects using pnpm. T
 
 1. Bump the version in package.json based on the specified version level (patch, minor, or major)
 2. Create a Git tag using the format "vMajor.Minor.Patch"
-3. Push the new version and tag to the repository
+3. Push the new version commit and tag to the repository via `p6m-actions/p6m-release-action`, which produces a verified commit through the p6m GitHub App (compatible with branch rulesets that require signed commits or block direct pushes).
 
 This action assumes that pnpm has been installed and the repository has been checked out with the necessary permissions.
 
 ## Usage
 
-Add this action to your workflow after you've set up pnpm and checked out your code. Make sure your workflow has write permissions to push tags and commits to your repository.
+Add this action to your workflow after you've set up pnpm and checked out your code. Your workflow must grant `id-token: write` so the underlying release action can perform the OIDC token exchange that mints the GitHub App credential used to push the commit and tag.
 
 ```yaml
 - name: Cut Tag
-  uses: p6m-actions/js-pnpm-cut-tag@v1
+  uses: p6m-actions/js-pnpm-cut-tag@v2
   with:
     version-level: "patch" # Options: patch, minor, major
 ```
@@ -50,7 +50,8 @@ on:
     branches: [main]
 
 permissions:
-  contents: write # Required for pushing tags
+  contents: write # Required for checkout / fallback git operations
+  id-token: write # Required for OIDC token exchange in p6m-release-action
 
 jobs:
   build-and-release:
@@ -70,7 +71,7 @@ jobs:
         uses: p6m-actions/js-pnpm-build@v1
 
       - name: Cut Tag
-        uses: p6m-actions/js-pnpm-cut-tag@v1
+        uses: p6m-actions/js-pnpm-cut-tag@v2
         with:
           version-level: "patch"
 ```
@@ -96,7 +97,8 @@ on:
           - major
 
 permissions:
-  contents: write # Required for pushing tags
+  contents: write # Required for checkout / fallback git operations
+  id-token: write # Required for OIDC token exchange in p6m-release-action
 
 jobs:
   release:
@@ -113,7 +115,7 @@ jobs:
           node-version: "20"
 
       - name: Cut Tag
-        uses: p6m-actions/js-pnpm-cut-tag@v1
+        uses: p6m-actions/js-pnpm-cut-tag@v2
         with:
           version-level: ${{ github.event.inputs.version-level }}
 
@@ -123,9 +125,10 @@ jobs:
 
 ## Required Permissions
 
-This action requires write permissions to the repository contents to push commits and tags. Make sure to include the following permissions in your workflow:
+This action delegates the commit and tag push to `p6m-actions/p6m-release-action`, which uses an OIDC token exchange to mint a GitHub App credential. Your workflow must therefore grant `id-token: write`. `contents: write` is also recommended to cover `actions/checkout` and any fallback git operations.
 
 ```yaml
 permissions:
   contents: write
+  id-token: write
 ```
