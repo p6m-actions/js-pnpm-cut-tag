@@ -18,7 +18,7 @@ Add this action to your workflow after you've set up pnpm and checked out your c
 
 ```yaml
 - name: Cut Tag
-  uses: p6m-actions/js-pnpm-cut-tag@v1
+  uses: p6m-actions/js-pnpm-cut-tag@v2
   with:
     version-level: "patch" # Options: patch, minor, major
 ```
@@ -51,6 +51,7 @@ on:
 
 permissions:
   contents: write # Required for pushing tags
+  id-token: write # Required for Ybor GitHub App authentication
 
 jobs:
   build-and-release:
@@ -70,7 +71,7 @@ jobs:
         uses: p6m-actions/js-pnpm-build@v1
 
       - name: Cut Tag
-        uses: p6m-actions/js-pnpm-cut-tag@v1
+        uses: p6m-actions/js-pnpm-cut-tag@v2
         with:
           version-level: "patch"
 ```
@@ -97,6 +98,7 @@ on:
 
 permissions:
   contents: write # Required for pushing tags
+  id-token: write # Required for Ybor GitHub App authentication
 
 jobs:
   release:
@@ -113,7 +115,7 @@ jobs:
           node-version: "20"
 
       - name: Cut Tag
-        uses: p6m-actions/js-pnpm-cut-tag@v1
+        uses: p6m-actions/js-pnpm-cut-tag@v2
         with:
           version-level: ${{ github.event.inputs.version-level }}
 
@@ -123,9 +125,10 @@ jobs:
 
 ## Required Permissions
 
-This action requires write permissions to the repository contents to push commits and tags. Make sure to include the following permissions in your workflow:
+This action requires write permissions to the repository contents to push commits and tags, as well as id-token write permissions for authenticating with the Ybor GitHub App. Make sure to include the following permissions in your workflow:
 
 ```yaml
 permissions:
   contents: write
+  id-token: write
 ```

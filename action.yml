@@ -16,7 +16,7 @@ inputs:
 # Define the outputs for this action
 outputs:
   version:
-    description: "The new version number"
+  description: "The new version number"
     value: ${{ steps.version.outputs.version }}
   tag:
     description: "The new tag that was created"
@@ -26,15 +26,11 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Bump Version and Create Tag
+    - name: Bump Version
       id: version
       shell: bash
       working-directory: ${{ inputs.project-path }}
       run: |
-        # Set git user identity for the commit
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-
         # Bump version using pnpm
         echo "Bumping version with level: ${{ inputs.version-level }}"
         pnpm version ${{ inputs.version-level }} --no-git-tag-version
@@ -47,14 +43,14 @@ runs:
         TAG="v$NEW_VERSION"
         echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-        # Commit the version bump
+        # Stage the package.json changes
         git add package.json
-        git commit -m "Bump version to $NEW_VERSION"
 
-        # Create and push the tag
-        git tag $TAG
-        git push origin $TAG
-        git push
+    - name: Commit and Tag Release
+      uses: p6m-actions/p6m-release-action@v1
+      with:
+        tags: ${{ steps.version.outputs.tag }}
+        commit_message: "Bump version to ${{ steps.version.outputs.version }}"
 
 # Define the branding for the action in the GitHub Marketplace
 branding:
